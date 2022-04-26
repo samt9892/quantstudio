@@ -32,10 +32,11 @@ pcr <- inner_join(amp, pcr, by = c("Well Position", "filename.pcr", "run_endtime
 #Reorder columns
 pcr <- pcr %>% 
   relocate(c("Sample Name", "CT", "Delta Rn", "Comments", "Tm1", "Tm2", "Tm3","Tm4"))
-
-#Output PCR file
-write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"))
 }
 
-
-
+#remove .xls suffix
+in.dir <- substr(in.dir,1,nchar(in.dir)-4) 
+#Output PCR file
+for(i in seq_along(in.dir)) {
+  write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
+}

@@ -5,7 +5,7 @@ Workflow for processing Applied Biosystems QuantStudio Real time PCR data into a
   - as excel format
   - all data types selected
 
-2) place files in same directory as the R script
+2) place files into the same directory as quantstudio.R
 
 3) Run script 
-  - Output files have _output.csv 
+  - Output files have the suffix: _output 

@@ -13,4 +13,4 @@ Workflow for processing Applied Biosystems QuantStudio Real time PCR data into a
 3) place files into the same directory as quantstudio.R
 
 4) Run script 
-  - Output files have the suffix: _output 
+    - Output files have the suffix: _output 

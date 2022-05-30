@@ -18,7 +18,7 @@ This repository contains a simple script for converting [quantstudio3](https://w
     - As `.xls` format
     - Check content boxes for "Results" and "Amplification Data" 
 
-3) Place file into the same directory as the script (quantstudio.R)
+3) Place file into the same directory as quantstudio.R
 
 4) Run script 
     - Output files have the suffix: `**_output`

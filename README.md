@@ -8,7 +8,7 @@ This repository contains a simple script for converting [quantstudio3](https://w
 
 ### How To
 
-1) Structure well comments comments in QuantStudio3 Design and Analysis software as follows:
+1) Structure 'well comments' in QuantStudio3 Design and Analysis software as follows:
     - `Annealing temperature (°C)` `primer concentration (uM)` `primer volume (uL)` `primer name` `sample volume (uL)` `Additional comments`
     - **Example:** `54`, `5`, `1`, `16S`, `8.8`, `PCR-negative control` 
     - Ensure entries are comma-separated

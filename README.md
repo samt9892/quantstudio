@@ -6,7 +6,7 @@
 
 This repository contains a simple script for converting [quantstudio3](https://www.thermofisher.com/order/catalog/product/A31665?SID=srch-srp-A31665) data into an interpretable .csv file for downstream analysis.
 
-### How To
+## How To
 
 1) Structure 'well comments' in QuantStudio3 Design and Analysis software as follows:
     - `Annealing temperature (°C)` `primer concentration (uM)` `primer volume (uL)` `primer name` `sample volume (uL)` `Additional comments`
@@ -22,3 +22,6 @@ This repository contains a simple script for converting [quantstudio3](https://w
 
 4) Run script 
     - Output files have the suffix: `**_output`
+
+## Authors and contributors
+Samuel Thompson

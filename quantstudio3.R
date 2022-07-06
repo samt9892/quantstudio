@@ -11,7 +11,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 options(scipen=5)                                                               #reduce decimal places
 wd <- dirname(rstudioapi::getSourceEditorContext()$path)                        #get current directory
-in.dir <- list.files(paste(wd), pattern = ".xls", full.names = TRUE)            #input file list
+in.dir <- list.files(paste(wd, 'input', sep="/"), pattern = ".xls", full.names = TRUE)            #input file list
 
 
 
@@ -36,12 +36,12 @@ amp <- subset(amp, Cycle == 50, select = c(`Well Position`, `Delta Rn`, `filenam
 pcr <- inner_join(amp, pcr, by = c("Well Position","filename.pcr","run_endtime.pcr"))
 
 #Split comments field
-pcr <- separate(pcr, "Comments", c("Annealing_temperature(°C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"),
+pcr <- separate(pcr, "Comments", c("Annealing_temperature(?C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"),
                  sep =",\\ ", remove = F, extra = "merge", fill = "warn")
 
 #Reorder columns
 pcr <- pcr %>% 
-  relocate(c("Sample Name","CT","Delta Rn","Tm1","Tm2","Tm3","Tm4","Annealing_temperature(°C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"))
+  relocate(c("Sample Name","CT","Delta Rn","Tm1","Tm2","Tm3","Tm4","Annealing_temperature(?C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"))
 
 #remove .xls suffix
 in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4) 

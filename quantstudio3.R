@@ -1,5 +1,5 @@
 #Package names
-packages <- c("readxl", "rJava", "xlsx", "dplyr", "tidyr")
+packages <- c("readxl", "rJava", "xlsx", "dplyr", "tidyr", "data.table")
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -15,7 +15,7 @@ in.dir <- list.files(paste(wd, 'input', sep="/"), pattern = ".xls", full.names =
 
 
 
-#loop over all files
+#loop over all files ----
 for(i in seq_along(in.dir)) {
 pcr <-  read.xlsx(in.dir[i], sheetName = "Results")
 amp <- read.xlsx(in.dir[i], sheetName = "Amplification Data")
@@ -45,14 +45,14 @@ pcr <- pcr %>%
 
 #remove .xls suffix
 in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4) 
-#Output PCR file
+#Output PCR file ----
 write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
 }
 
 
-#remove .xls suffix
-#in.dir <- substr(in.dir,1,nchar(in.dir)-4) 
-#Output PCR file
-#for(i in seq_along(in.dir)) {
-  #write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
-#}
+
+#generate combined .csv file ----
+# read output file paths
+in.dir <- list.files(paste(wd, 'input', sep="/"), pattern = "output.csv", full.names = TRUE) 
+# read combined file content
+combined <- rbindlist(sapply(in.dir, fread,simplify = FALSE), idcol = 'filename', fill=TRUE)

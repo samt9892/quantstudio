@@ -56,3 +56,5 @@ write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
 in.dir <- list.files(paste(wd, 'input', sep="/"), pattern = "output.csv", full.names = TRUE) 
 # read combined file content
 combined <- rbindlist(sapply(in.dir, fread,simplify = FALSE), idcol = 'filename', fill=TRUE)
+#Output PCR file ----
+write.csv(combined, paste(wd, "input", "combined_output.csv", sep="/"), row.names = FALSE)

@@ -94,7 +94,6 @@ colnames(pcr2_merged) <- paste(colnames(pcr2_merged), "pcr2", sep="_")
 pcr1_merged <- list.files(paste(wd, 'PCR1-xls', sep="/"), pattern = "pcr1_merged_reps.csv", full.names = TRUE) 
 pcr1_merged <- read.csv(pcr1_merged[1])
 
-
 both_merged <- right_join(pcr1_merged, pcr2_merged, by = c("Sample.Name_pcr1" = "Sample Name_pcr2", "Primer_name_pcr1" = "firstround_primer_name_pcr2"))
 
 

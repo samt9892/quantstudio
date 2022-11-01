@@ -12,6 +12,9 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 options(scipen=5)                                                                               #reduce decimal places
 wd <- dirname(rstudioapi::getSourceEditorContext()$path)                                        #get current directory
+#delete old outputs and build new output directory
+unlink(paste(wd, "PCR1-xls", "output", sep = "/"), recursive=TRUE)                              #delete output directory
+dir.create(paste(wd, "PCR1-xls", "output", sep = "/"))                                          #make output directory
 
 #Loop over all PCR1 files ----
 in.dir <- list.files(paste(wd, 'PCR1-xls', sep="/"), pattern = ".xls", full.names = TRUE)          #PCR1 file list

@@ -47,8 +47,10 @@ pcr <- pcr %>%
   relocate(c("Sample Name","CT","Delta Rn","Tm1","Tm2","Tm3","Tm4","Annealing_temperature(?C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"))
 
 #remove .xls suffix
-in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4) 
+
 #Output individual PCR1 .csvs ----
+in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4)                           #remove .xls suffix
+in.dir[i] <- gsub(in.dir[i], pattern = "(PCR1-xls/)(.*)", replacement = "\\1output/\\2")        #insert output folder into path (in.dir[i])
 write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
 }
 #clean data after loop
@@ -58,13 +60,13 @@ rm(amp, pcr)
 
 #Generate PCR1_combined files ----
 # read output file paths
-in.dir <- list.files(paste(wd, 'PCR1-xls', sep="/"), pattern = "output.csv", full.names = TRUE) 
+in.dir <- list.files(paste(wd, 'PCR1-xls/output', sep="/"), pattern = "output.csv", full.names = TRUE) 
 
 # read pcr1_combined file content
 pcr1_combined <- rbindlist(sapply(in.dir, fread,simplify = FALSE), idcol = 'filename_fullpath', fill=TRUE)
 #pcr1_combined <- subset(pcr1_combined, select = -c(49))               #remove duplicated filename column that mysteriously appears
 pcr1_combined$CT <- as.numeric(as.character(pcr1_combined$CT))
-  pcr1_combined$CT[is.na(pcr1_combined$CT)] <- 0
+  pcr1_combined$CT[is.na(pcr1_combined$CT)] <- 50                     #when CT value = NA then set to 50 so the mean calculates correctly
 
 #combine PCR replicates (if filename=same) based on their sample number
 pcr1_merged <- pcr1_combined %>% 
@@ -82,37 +84,36 @@ pcr1_merged <- pcr1_combined %>%
             Comments = first(Additional_comments))
 
 #Calculate PCR1 pooling (based on Delta Rn) ----
-pool <- 5                                                   #set number of pools required
-poolvol <- 2                                                #step volume of each pool (e.g. x, x*2, x*3, x*4 etc)
+pool <- 4                                                   #set number of pools required
+poolvol <- 3                                                #step volume of each pool (e.g. x, x*2, x*3, x*4 etc)
 
-pcr1_merged$pool_group <-  as.numeric(cut(pcr1_merged$delta_rn, pool))        #assign pool groups based on Delta Rn           
+pcr1_merged$pool_group <-  as.numeric(cut(pcr1_merged$delta_rn, breaks = c(-0.2, 0.75, 1.5, 2.25, 3)))        #assign pool groups based on Delta Rn           
 
 pcr1_pool_info <- pcr1_merged %>%
-  group_by(pool_group) %>%
+  group_by(pool_group, Primer_name) %>%
   dplyr::summarise(count = n(), 
                    mean.delta_rn = mean(delta_rn), 
                    min.delta_rn = min(delta_rn),
                    max.delta_rn = max(delta_rn),
                    std_dev.delta_rn = sd(delta_rn),
                    pool_vol = poolvol/mean(delta_rn),
-                   totalpoolvol = poolvol*count)
-pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol> 5] <- 4.8              #set any volumes larger than 5 to 5 - 10ul 2nd PCR reaction vol?
-pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol< 4] <- pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol< 4]*1.8              #set any volumes less than 4 to x2 
+                   totalpoolvol = pool_vol*count)
+#pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol < 4] <- pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol< 4]*1.8              #set any volumes less than 4 to x2 
+pcr1_pool_info$pool_vol[pcr1_pool_info$pool_vol > 6] <- 6              #set any volumes larger than 6 to 6 - 10ul 2nd PCR reaction vol?
 pcr1_pool_info$pool_vol <- signif(pcr1_pool_info$pool_vol, 2)                                                   #set significant fig to 2
+
 
 #merge pool_vol into the pcr1_merged file..
 pcr1_merged$pool_vol <- pcr1_pool_info$pool_vol[match(pcr1_merged$pool_group, pcr1_pool_info$pool_group)]
 #add _pcr1 suffix to all pcr1_merged columns
 colnames(pcr1_merged) <- paste(colnames(pcr1_merged), "pcr1", sep="_")
 
-
 #Output PCR1 combined, merged-reps and pool_info .csvs ----
 pcr1_combined_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr1_combined.csv", sep ="_")
-write.csv(pcr1_combined, paste(wd, "PCR1-xls", pcr1_combined_name, sep="/"), row.names = FALSE)
+write.csv(pcr1_combined, paste(wd, "PCR1-xls/output", pcr1_combined_name, sep="/"), row.names = FALSE)
 
 pcr1_merged_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr1_merged_reps.csv", sep ="_")
-write.csv(pcr1_merged, paste(wd, "PCR1-xls", pcr1_merged_name, sep="/"), row.names = FALSE)
+write.csv(pcr1_merged, paste(wd, "PCR1-xls/output", pcr1_merged_name, sep="/"), row.names = FALSE)
 
 pool_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr1_pool_info.csv", sep ="_")
-write.csv(pcr1_pool_info, paste(wd, "PCR1-xls", pool_name, sep="/"), row.names = FALSE)
-
+write.csv(pcr1_pool_info, paste(wd, "PCR1-xls/output", pool_name, sep="/"), row.names = FALSE)

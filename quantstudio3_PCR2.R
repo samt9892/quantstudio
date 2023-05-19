@@ -1,7 +1,7 @@
 #Load packages ----
 options(java.parameters = "-Xmx16000m")            # increase java RAM allocation to avoid errors; modify based on YOUR system
 
-packages <- c("readxl", "rJava", "xlsx", "dplyr", "tidyr", "data.table")
+packages <- c("readxl", "rJava", "xlsx", "dplyr", "tidyr", "data.table", "gtools")
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -54,9 +54,11 @@ pcr <- separate(pcr, "Additional_comments", c("firstround_primer_name", "Comment
 pcr <- pcr %>% 
   relocate(c("Sample Name","CT","Delta Rn","Tm1","Tm2","Tm3","Tm4","Annealing_temperature(?C)","Primer_concentration_(uM)","Primer_volume","Primer_name","Sample_volume","Additional_comments"))
 
-#remove .xls suffix
-in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4) 
+
+ 
 #Output individual PCR2 .csvs ----
+in.dir[i] <- substr(in.dir[i],1,nchar(in.dir[i])-4)                               #remove .xls suffix
+in.dir[i] <- gsub(in.dir[i], pattern = "(PCR2-xls/)(.*)", replacement = "\\1output/\\2")#insert output folder into path (in.dir[i])
 write.csv(pcr, paste(in.dir[i], "output.csv", sep = "_"), row.names = FALSE)
 }
 #clean data after loop
@@ -66,7 +68,7 @@ rm(amp, pcr)
 
 #Generate PCR2_combined files ----
 # read output file paths
-in.dir <- list.files(paste(wd, 'PCR2-xls', sep="/"), pattern = "output.csv", full.names = TRUE) 
+in.dir <- list.files(paste(wd, 'PCR2-xls/output', sep="/"), pattern = "output.csv", full.names = TRUE) 
 
 # read pcr2_combined file content
 pcr2_combined <- rbindlist(sapply(in.dir, fread,simplify = FALSE), idcol = 'filename_fullpath', fill=TRUE)
@@ -95,19 +97,40 @@ pcr2_merged <- pcr2_combined %>%
 #add _pcr2 suffix to all pcr2_merged columns
 colnames(pcr2_merged) <- paste(colnames(pcr2_merged), "pcr2", sep="_")
 
+
+#Output pcr2 combined, merged-reps and pool_info .csvs ----
+pcr2_combined_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr2_combined.csv", sep ="_")
+write.csv(pcr2_combined, paste(wd, "pcr2-xls/output", pcr2_combined_name, sep="/"), row.names = FALSE)
+
+pcr2_merged_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr2_merged_reps.csv", sep ="_")
+write.csv(pcr2_merged, paste(wd, "pcr2-xls/output", pcr2_merged_name, sep="/"), row.names = FALSE)
+
+
+
 #Combine PCR2_merged with PCR1_merged ----
 #read in PCR1
-pcr1_merged <- list.files(paste(wd, 'PCR1-xls', sep="/"), pattern = "pcr1_merged_reps.csv", full.names = TRUE) 
+pcr1_merged <- list.files(paste(wd, 'PCR1-xls/output', sep="/"), pattern = "pcr1_merged_reps.csv", full.names = TRUE) 
 pcr1_merged <- read.csv(pcr1_merged[1])
 #merge PCR1 + 2
 both_merged <- right_join(pcr1_merged, pcr2_merged, by = c("Sample.Name_pcr1" = "Sample Name_pcr2", "Primer_name_pcr1" = "firstround_primer_name_pcr2"))
 #move columns with pooling info to the front
-both_merged <- both_merged %>% relocate(c(pool_group_pcr1, pool_vol_pcr1, Well_position_pcr2), .after = Primer_name_pcr1)
+both_merged <- both_merged %>% relocate(c(pool_group_pcr1, pool_vol_pcr1, Well_position_pcr2, filename_pcr2), .after = Primer_name_pcr1)
+#reorder by well_position and filename of the 2nd plate
+both_merged <- both_merged[with(both_merged, mixedorder(both_merged$Well_position_pcr2)),]
+both_merged <- both_merged[with(both_merged,order(both_merged$filename_pcr2)),]
 
-#Output pcr2 combined, merged-reps and pool_info .csvs ----
-pcr2_combined_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr2_combined.csv", sep ="_")
-write.csv(pcr2_combined, paste(wd, "pcr2-xls", pcr2_combined_name, sep="/"), row.names = FALSE)
 
-pcr2_merged_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pcr2_merged_reps.csv", sep ="_")
-write.csv(pcr2_merged, paste(wd, "pcr2-xls", pcr2_merged_name, sep="/"), row.names = FALSE)
+both_merged_name <- paste((format(Sys.time(), "%Y-%m-%d")), "list_for_pooling.csv", sep ="_")
+write.csv(both_merged,paste(wd, "pcr2-xls/output", both_merged_name, sep ="/"), row.names = FALSE)
 
+#now calculate pool volumes for bead cleanups
+beads <- both_merged %>%
+  mutate(Comments_pcr1 = sub("_[^_]+$", "", Comments_pcr1)) %>%                       #convert 'control_*' to 'control'
+  mutate(Comments_pcr1 = sub("control_bleach", "control", Comments_pcr1)) %>%        #convert 'control_bleach' to 'control'
+  group_by(Primer_name_pcr1, filename_pcr2, Comments_pcr1) %>%
+  summarise(count = n(),
+            totalvol = sum(pool_vol_pcr1))
+
+
+beads_name <- paste((format(Sys.time(), "%Y-%m-%d")), "pool_vols_for_cleanup.csv", sep ="_")
+write.csv(beads,paste(wd, "pcr2-xls/output", beads_name, sep ="/"), row.names = FALSE)
